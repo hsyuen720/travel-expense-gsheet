@@ -98,6 +98,7 @@ export const getTargetRange = (sheet, start, x, y, locked) => {
   const endRow = getTargetRow(startRow, y);
   const from = formatCell(startColumn, startRow, locked);
   const to = formatCell(endColumn, endRow, locked);
+  console.log(to);
   return `${sheet}!${from}:${to}`;
 };
 

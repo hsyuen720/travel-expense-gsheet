@@ -9,9 +9,11 @@ import {
   getCellByHeader,
   getEntireColumnRange,
   getEntireRowRange,
+  getTargetCell,
+  getTargetRange,
 } from "../sheets.js";
 
-export const setExpensesSheet = () => {
+export const setExpensesSheet = (people = []) => {
   const setSummaryData = () => {
     return {
       range: getEntireRowRange(
@@ -69,8 +71,35 @@ export const setExpensesSheet = () => {
           EXPENSES_HEADINGS.DIVIDED_BY,
         ),
       ),
-      // TODO
-      // values: [[`=ARRAYFORMULA()`]],
+      values: Array.from({ length: 100 }, (_, i) => {
+        const allCell = getTargetCell(
+          EXPENSES_START_CELLS.PEOPLE_TO_PAY,
+          0,
+          i + 1,
+        );
+
+        const allPeopleRange = getEntireRowRange(
+          SHEETS.SUMMARY,
+          SUMMARY_START_CELLS.PEOPLE,
+        );
+        const currentAmountCell = getTargetCell(
+          getCellByHeader(
+            EXPENSES_START_CELLS.DATA,
+            EXPENSES_HEADINGS,
+            EXPENSES_HEADINGS.AMOUNT,
+          ),
+          0,
+          i,
+        );
+        const currentPeopleRange = getEntireRowRange(
+          SHEETS.EXPENSES,
+          getTargetCell(EXPENSES_START_CELLS.PEOPLE_TO_PAY, 1, i + 1),
+        );
+
+        return [
+          `=IF(${currentAmountCell} > 0, IF(${allCell}, COUNTA(${allPeopleRange}), COUNTIF(${currentPeopleRange}, TRUE)), "")`,
+        ];
+      }),
     };
   };
 
@@ -92,7 +121,7 @@ export const setExpensesSheet = () => {
       ),
     );
 
-    const condition = `${dividedByRange} = 0`;
+    const condition = `ISNUMBER(${dividedByRange})`;
     const value = `${amountRange} / ${dividedByRange}`;
     return {
       range: getEntireColumnRange(
@@ -103,12 +132,25 @@ export const setExpensesSheet = () => {
           EXPENSES_HEADINGS.AMOUNT_PER_PERSON,
         ),
       ),
-      values: [[`=ARRAYFORMULA(IF(${condition}, "", ${value}))`]],
+      values: [[`=ARRAYFORMULA(IF(${condition}, ${value}, ""))`]],
     };
   };
 
   const setPeopleToPayData = () => {
-    // All true and each person set false
+    const startCell = getTargetCell(EXPENSES_START_CELLS.PEOPLE_TO_PAY, 0, 1);
+    return {
+      range: getTargetRange(SHEETS.EXPENSES, startCell, people.length, 100),
+      values: Array.from({ length: 100 }).map((_, i) => {
+        const currentPayeeRange = getEntireRowRange(
+          SHEETS.EXPENSES,
+          getTargetCell(startCell, 1, i),
+        );
+        return [
+          `=COUNTIF(${currentPayeeRange}, TRUE) <= 0`,
+          ...people.map((_) => "FALSE"),
+        ];
+      }),
+    };
   };
 
   return [
@@ -119,10 +161,12 @@ export const setExpensesSheet = () => {
     // Data
     setDividedByData(),
     setAmountPerPersonData(),
-    // setPeopleToPayData(),
+    setPeopleToPayData(),
   ];
 };
 
 export const setExpensesSheetFormat = () => {
   return [];
 };
+
+export const setExpensesSheetValidation = () => {};

@@ -33,7 +33,7 @@ export const setupSheets = async (req, res) => {
     await googleSheets.spreadsheets.values.batchUpdate({
       spreadsheetId,
       requestBody: {
-        data: [...setExpensesSheet(), ...setSummarySheet(people)],
+        data: [...setExpensesSheet(people), ...setSummarySheet(people)],
         valueInputOption: "USER_ENTERED",
       },
     });
